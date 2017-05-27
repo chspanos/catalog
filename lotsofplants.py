@@ -65,7 +65,7 @@ plants = {
       "name": "False Spirea",
       "botanical_name": "Astilbe",
       "description": "Perennial with plume-like flower clusters and attractive cut foliage",
-      "picture": "/static/images/astible.JPG",
+      "picture": "/static/images/astilbe.JPG",
       "category": "Perennials"
     },{
       "name": "Beans 'Blue Lake'",
@@ -83,7 +83,7 @@ plants = {
       "name": "Cosmos 'Sonata'",
       "botanical_name": "Cosmos bipinnatus",
       "description": "Annual with divided leaves and daisy-like flowers in white and shades of pink and crimson",
-      "picture": "/static/images/coreopsis.JPG",
+      "picture": "/static/images/cosmos.JPG",
       "category": "Annuals"
     },{
       "name": "Daffodil",

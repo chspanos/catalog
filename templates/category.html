@@ -1,0 +1,42 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+	<div class="row divider green">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row banner menu">
+		<div class="col-md-10 col-md-offset-1 padding-none">
+			<h1>{{ category.name }}</h1>
+		</div>
+		<div class="col-md-1"></div>
+	</div>
+
+	{% if plants %}
+		<div class="row">
+			{% for plant in plants %}
+				<div class="col-md-3">
+					<div class="plant-item">
+						<a href="{{ url_for('showPlantItem', category_name=category.name, plant_name=plant.name)}}">
+							<h3>{{ plant.name }}</h4>
+						</a>
+						<figure>
+							<img src="{{ plant.image }}" alt="{{ plant.name }}">
+						</figure>
+						<h5><strong>Botanical name: </strong>{{plant.botanical_name}}</h5>
+						<h5><strong>Category: </strong>{{plant.category.name}}</h5>
+						<p>{{plant.description}}</p>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	{% else %}
+		<div class=row>
+			<div class="col-md-1"></div>
+			<div class="col-md-10">
+				<p>There are no plants for this category. Please add a plant item.</p>
+			</div>
+			<div class="col-md-1"></div>
+		</div>
+	{% endif %}
+
+{% endblock %}
