@@ -52,18 +52,18 @@
 
 	<div class="row">
 		<div class="col-md-1"></div>
-		<div class="col-md-4">
-			<div class="plant-item">
+		<div class="col-md-6">
+			<div class="plant-detail">
+				<p><strong>Botanical name: </strong>{{plant.botanical_name}}</p>
+				<p><strong>Category: </strong>{{plant.category.name}}</p>
 				<figure>
 					<img src="{{ plant.image }}" alt="{{ plant.name }}">
 					<figcaption>{{ plant.name }}</figcaption>
 				</figure>
-				<h4>Botanical name: {{plant.botanical_name}}</h4>
-				<h4>Category: {{plant.category.name}}</h4>
 				<p>{{plant.description}}</p>
 			</div>
 		</div>
-		<div class="col-md-7"></div>
+		<div class="col-md-5"></div>
 	</div>
 
 {% endblock %}

@@ -26,11 +26,12 @@ def disconnect():
 @app.route('/catalog/')
 def showCategories():
     ''' This page shows all the plant categories along with the most
-    recently added plant item in each category
+    recently added plant items
     '''
     #return "Shows all plant categories"
     categories = session.query(PlantCategory).all()
-    return render_template('categories.html', categories=categories)
+    plants = session.query(PlantItem).order_by(PlantItem.id.desc()).limit(6)
+    return render_template('categories.html', categories=categories, plants=plants)
 
 @app.route('/catalog/<category_name>/')
 def showCategory(category_name):

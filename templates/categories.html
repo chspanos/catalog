@@ -1,17 +1,13 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-	<div class="row top-menu">
-		<div class="col-md-10"></div>
-		<div class="col-md-2 text-right"></div>
-	</div>
 	<div class="row divider blue">
 		<div class="col-md-12"></div>
 	</div>
 	<div class="row banner main">
 		<div class="col-md-1"></div>
 		<div class="col-md-11 padding-none">
-			<h1>Plants</h1>
+			<h1>Plant Catalog</h1>
 		</div>
 	</div>
 
@@ -41,15 +37,38 @@
 		</div>
 		<div class="col-md-1"></div>
 	</div>
-	{% for category in categories %}
-		<a href = "{{url_for('showCategory', category_name=category.name)}}">
-			<div class="row">
-				<div class="col-md-1"></div>
-				<div class="col-md-10 category-list">
-					<h3>{{category.name}}</h3>
-				</div>
-				<div class="col-md-1"></div>
+
+	<div class="row main-info">
+		<div class="col-md-1"></div>
+		<div class="col-md-3 category-list">
+			<div class="heading padding-bottom padding-top">
+				<h2>Categories</h2>
 			</div>
-		</a>
-	{% endfor %}
+			<ul class="category-data">
+				{% for category in categories %}
+					<li>
+						<a href = "{{url_for('showCategory', category_name=category.name)}}">
+							<h3> {{category.name}} </h3>
+						</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+		<div class="col-md-8 plant-list">
+			<div class="heading padding-bottom padding-top">
+				<h2>Latest Items</h2>
+			</div>
+			{% for plant in plants %}
+				<div class="col-md-5 plant-item">
+					<a href = "{{url_for('showPlantItem', category_name=plant.category.name, plant_name=plant.name)}}">
+						<h4 class="plant-name"> {{plant.name}} </h4>
+					</a>
+					<figure>
+						<img src="{{plant.image}}" alt="{{plant.name}}">
+					</figure>
+					<p><strong>Category: </strong>{{ plant.category.name}}</p>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
 {% endblock %}

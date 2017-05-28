@@ -26,7 +26,7 @@ for item in items:
 
 # Create dummy user
 User1 = User(name="Flora Bunda", email="florasflowers@gmail.com",
-             picture='#')
+             picture="/static/images/blank_user.gif")
 session.add(User1)
 session.commit()
 
