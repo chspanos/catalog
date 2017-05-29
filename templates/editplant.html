@@ -1,0 +1,54 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+	<div class="row divider green">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row banner menu">
+		<div class="col-md-11 col-md-offset-1 padding-none">
+			<h1>Edit Plant</h1>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6 col-md-offset-1 padding-top">
+			<form action="{{url_for('editPlant', plant_name=plant.name)}}" method = "post">
+				<div class="form-group">
+					<label for="name">Name:</label>
+					<input type ="text" maxlength="80" class="form-control" name="name" placeholder="{{plant.name}}">
+
+					<label for="botanical_name">Botanical name:</label>
+					<input type ="text" maxlength="80" class="form-control" name="botanical_name" placeholder="{{plant.botanical_name}}">
+
+					<label for="image">Image URL:</label>
+					<input type ="text" maxlength="250" class="form-control" name="image" placeholder="{{plant.image}}">
+
+					<label for="description">Description:</label>
+					<textarea class="form-control" maxlength="250" rows="3" name="description" placeholder="{{plant.description}}"></textarea>
+
+					<label for="category">Category:</label>
+					{% for category in categories %}
+						<div class="radio">
+						  <label>
+						    <input type="radio" name="category" id="cat{{category.id}}" value="{{category.name}}" {% if plant.category_id == category.id %}checked{%endif%}>
+								{{category.name}}
+						  </label>
+						</div>
+					{% endfor %}
+					<button type="submit" class="btn btn-default" id="submit" value="save">
+						<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+						Save Changes
+					</button>
+				</div>
+			</form>
+			<div class="cancel-btn">
+				<a href = '{{url_for('showPlantItem', category_name=plant.category.name, plant_name=plant.name)}}'>
+					<button class="btn btn-default">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						Cancel
+					</button>
+				</a>
+			</div>
+		</div>
+	</div>
+{% endblock %}

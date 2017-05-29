@@ -56,17 +56,24 @@ def showPlantItem(category_name, plant_name):
 @app.route('/catalog/newplant/')
 def newPlant():
     ''' This page is for creating a new plant item '''
-    return "Create a new plant"
+    # return "Create a new plant"
+    categories = session.query(PlantCategory).all()
+    return render_template('newplant.html', categories=categories)
 
 @app.route('/catalog/<plant_name>/edit/')
 def editPlant(plant_name):
     ''' This page is for editing the given plant item '''
-    return "Edit plant %s" % plant_name
+    # return "Edit plant %s" % plant_name
+    categories = session.query(PlantCategory).all()
+    plant = session.query(PlantItem).filter_by(name=plant_name).first()
+    return render_template('editplant.html', categories=categories, plant=plant)
 
 @app.route('/catalog/<plant_name>/delete/')
 def deletePlant(plant_name):
     ''' This page is for deleting the given plant item '''
-    return "Delete plant %s" % plant_name
+    # return "Delete plant %s" % plant_name
+    plant = session.query(PlantItem).filter_by(name=plant_name).first()
+    return render_template('deleteplant.html', plant=plant)
 
 
 if __name__ == '__main__':
