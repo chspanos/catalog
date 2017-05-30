@@ -6,7 +6,7 @@
 .top-menu {
   background-color: #3e2723;
   padding-top: 10px;
-  height: 40px;
+  height: 50px;
 }
 
 .divider {
@@ -74,4 +74,14 @@ figcaption {
 
 .cancel-btn {
   margin-top: 10px;
+}
+
+.flash {
+	background-color: #98FB98;
+	text-decoration: none;
+}
+
+.flash li {
+	list-style-type: none;
+	text-align: center;
 }
