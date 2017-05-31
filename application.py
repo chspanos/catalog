@@ -71,7 +71,6 @@ def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
         for x in range(32))
     login_session['state'] = state
-    #return "The current state is %s" % login_session['state']
     return render_template('login.html', STATE=login_session['state'])
 
 
@@ -165,7 +164,7 @@ def gconnect():
     return output
 
 
-# Google Disconnect Handler
+# Google Disconnect and Logout Handler
 @app.route('/disconnect')
 def disconnect():
     """ Page to disconnect user from Google account and logout """
@@ -204,49 +203,76 @@ def disconnect():
         return response
 
 
+# Main catalog page handler
 @app.route('/')
 @app.route('/catalog/')
 def showCategories():
     """ This page shows all the plant categories along with the most
     recently added plant items
     """
-    #return "Shows all plant categories"
     categories = db_session.query(PlantCategory).all()
     plants = db_session.query(PlantItem).order_by(PlantItem.id.desc()).limit(6)
     return render_template('categories.html', categories=categories, plants=plants)
 
+
+# Show Category page handler
 @app.route('/catalog/<category_name>/')
 def showCategory(category_name):
     """ This page shows all the plant items for the given category """
-    # return "Show all plant items for category %s" % category_name
     category = db_session.query(PlantCategory).filter_by(name=category_name).one()
     plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
     return render_template('category.html', category=category, plants=plants)
 
+
+# Show a single plant item page handler
 @app.route('/catalog/<category_name>/<plant_name>/')
 def showPlantItem(category_name, plant_name):
     """ This page shows all the details for the given plant item """
-    #return "Show all details for plant %s" % plant_name
-    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-    plant = db_session.query(PlantItem).filter_by(name=plant_name, category_id=category.id).first()
-    creator = db_session.query(User).filter_by(id=plant.user_id).one()
-    if category and plant and creator:
+    try:
+        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        plant = db_session.query(PlantItem).filter_by(name=plant_name, category_id=category.id).first()
+        creator = db_session.query(User).filter_by(id=plant.user_id).one()
         return render_template('plant.html', plant=plant, creator=creator)
-    else:
-        return "Plant %s is not in database" % plant_name
+    except:
+        flash("Category: %s, Plant: %s is not in catalog" % (category_name, plant_name))
+        return redirect(url_for('showCategories'))
 
-@app.route('/catalog/newplant/')
+
+# Page handler for creating a new plant item
+@app.route('/catalog/newplant/', methods=['GET', 'POST'])
 def newPlant():
     """ This page is for creating a new plant item """
     # Check for logged in user
     if 'username' not in login_session:
         return redirect('/login')
-    # return "Create a new plant"
-    categories = db_session.query(PlantCategory).all()
-    return render_template('newplant.html', categories=categories)
+    # Process request
+    if request.method == 'POST':
+        # Get data from input form
+        name = request.form['name']
+        botanical_name = request.form['botanical_name']
+        image = request.form['image']
+        description = request.form['description']
+        category_name = request.form['category']
+        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        user_id = login_session['user_id']
+        # create new Plant database entry
+        newPlantItem = PlantItem(name=name, botanical_name=botanical_name,
+            image=image, description=description, category_id=category.id,
+            user_id = user_id)
+        db_session.add(newPlantItem)
+        db_session.commit()
+        # redirect to Plant page
+        flash("New Plant %s successfully created" % newPlantItem.name)
+        return redirect(url_for('showPlantItem', category_name=category_name,
+            plant_name=newPlantItem.name))
+    else:
+        # Display new plant page
+        categories = db_session.query(PlantCategory).all()
+        return render_template('newplant.html', categories=categories)
 
 
-@app.route('/catalog/<plant_name>/edit/')
+# Edit a plant item page handler
+@app.route('/catalog/<plant_name>/edit/', methods=['GET', 'POST'])
 def editPlant(plant_name):
     """ This page is for editing the given plant item """
     # Check for logged in user
@@ -254,31 +280,63 @@ def editPlant(plant_name):
         return redirect('/login')
     # Retrieve plant information
     categories = db_session.query(PlantCategory).all()
-    plant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    editedPlant = db_session.query(PlantItem).filter_by(name=plant_name).first()
     # check for ownership
-    if login_session['user_id'] != plant.user_id:
+    if login_session['user_id'] != editedPlant.user_id:
         flash("Edit permission denied: User is not owner of %s" % plant_name)
         return redirect(url_for('showPlantItem',
             category_name=plant.category.name,
             plant_name=plant_name))
-    return render_template('editplant.html', categories=categories, plant=plant)
+    # Process request
+    if request.method == 'POST':
+        # Get data from input form
+        if request.form['name']:
+            editedPlant.name = request.form['name']
+        if request.form['botanical_name']:
+            editedPlant.botanical_name = request.form['botanical_name']
+        if request.form['image']:
+            editedPlant.image = request.form['image']
+        if request.form['description']:
+            editedPlant.description = request.form['description']
+        if request.form['category']:
+            category_name = request.form['category']
+            category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+            editedPlant.category_id = category.id
+        # update Plant database entry
+        db_session.add(editedPlant)
+        db_session.commit()
+        # redirect to Plant page
+        flash("Plant %s successfully edited" % editedPlant.name)
+        return redirect(url_for('showPlantItem', category_name=category_name,
+            plant_name=editedPlant.name))
+    else:
+        return render_template('editplant.html', categories=categories,
+            plant=editedPlant)
 
 
-@app.route('/catalog/<plant_name>/delete/')
+# Delete a plant item page handler
+@app.route('/catalog/<plant_name>/delete/', methods=['GET', 'POST'])
 def deletePlant(plant_name):
     """ This page is for deleting the given plant item """
     # Check for logged in user
     if 'username' not in login_session:
         return redirect('/login')
     # Retrieve plant information
-    plant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    delPlant = db_session.query(PlantItem).filter_by(name=plant_name).first()
     # check for ownership
-    if login_session['user_id'] != plant.user_id:
+    if login_session['user_id'] != delPlant.user_id:
         flash("Delete permission denied: User is not owner of %s" % plant_name)
         return redirect(url_for('showPlantItem',
             category_name=plant.category.name,
             plant_name=plant_name))
-    return render_template('deleteplant.html', plant=plant)
+    # Process request
+    if request.method == 'POST':
+        db_session.delete(delPlant)
+        db_session.commit()
+        flash("Plant %s successfully deleted" % plant_name)
+        return redirect(url_for('showCategories'))
+    else:
+        return render_template('deleteplant.html', plant=delPlant)
 
 
 if __name__ == '__main__':
