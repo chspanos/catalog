@@ -25,18 +25,20 @@
     {% endif %}
   {% endwith %}
 
-	<div class="row padding-top padding-bottom">
-		<div class="col-md-1"></div>
-		<div class="col-md-10 padding-none">
-			<a href="{{url_for('newPlant')}}">
-				<button class="btn btn-default" id="new-plant">
-					<span class="glyphicon glyphicon-leaf" aria-hidden="true"></span>
-					Add Plant
-				</button>
-			</a>
+	{% if 'username' in session %}
+		<div class="row padding-top padding-bottom">
+			<div class="col-md-1"></div>
+			<div class="col-md-10 padding-none">
+				<a href="{{url_for('newPlant')}}">
+					<button class="btn btn-default" id="new-plant">
+						<span class="glyphicon glyphicon-leaf" aria-hidden="true"></span>
+						Add Plant
+					</button>
+				</a>
+			</div>
+			<div class="col-md-1"></div>
 		</div>
-		<div class="col-md-1"></div>
-	</div>
+	{% endif %}
 
 	<div class="row main-info">
 		<div class="col-md-1"></div>

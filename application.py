@@ -34,11 +34,39 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 db_session = DBSession()
 
+# Helper functions for creating and handling new Users
+def createUser(login_session):
+    """ createUser creates a new User database entry based on the
+    given login session information and returns the user ID.
+    """
+    newUser = User(name=login_session['username'],
+        email=login_session['email'],
+        picture=login_session['picture'])
+    db_session.add(newUser)
+    db_session.commit()
+    user = db_session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+def getUserInfo(user_id):
+    """ Given a user_id return the corresponding User database object """
+    user = db_session.query(User).filter_by(id=user_id).one()
+    return user
+
+def getUserID(email):
+    """ Look up User by email address and return corresponding User's ID.
+    If no match return None.
+    """
+    try:
+        user = db_session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
 
 # Login handler
 @app.route('/login')
 def showLogin():
-    ''' This page handles logins '''
+    """ This page handles logins """
     # Create and save state token to prevent request forgery
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
         for x in range(32))
@@ -50,7 +78,7 @@ def showLogin():
 # Google connection handler
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
-    ''' This page handles the server-side callback from Google sign in '''
+    """ This page handles the server-side callback from Google sign in """
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state token.'), 401)
@@ -125,10 +153,10 @@ def gconnect():
     login_session['email'] = data['email']
 
     # If user is not alreaady in our database, create a new user
-    #user_id = getUserID(login_session['email'])
-    #if not user_id:
-    #    user_id = createUser(login_session)
-    #login_session['user_id'] = user_id
+    user_id = getUserID(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
 
     # Print Welcome message to user
     output = ''
@@ -140,7 +168,7 @@ def gconnect():
 # Google Disconnect Handler
 @app.route('/disconnect')
 def disconnect():
-    ''' Page to disconnect user from Google account and logout '''
+    """ Page to disconnect user from Google account and logout """
     # Grab credentials from login session
     credentials = login_session.get('credentials')
     if credentials is None:
@@ -164,7 +192,7 @@ def disconnect():
         del login_session['username']
         del login_session['picture']
         del login_session['email']
-        # del login_session['user_id']
+        del login_session['user_id']
         # Send success message
         flash("You have successfully been logged out.")
         return redirect(url_for('showCategories'))
@@ -179,9 +207,9 @@ def disconnect():
 @app.route('/')
 @app.route('/catalog/')
 def showCategories():
-    ''' This page shows all the plant categories along with the most
+    """ This page shows all the plant categories along with the most
     recently added plant items
-    '''
+    """
     #return "Shows all plant categories"
     categories = db_session.query(PlantCategory).all()
     plants = db_session.query(PlantItem).order_by(PlantItem.id.desc()).limit(6)
@@ -189,7 +217,7 @@ def showCategories():
 
 @app.route('/catalog/<category_name>/')
 def showCategory(category_name):
-    ''' This page shows all the plant items for the given category '''
+    """ This page shows all the plant items for the given category """
     # return "Show all plant items for category %s" % category_name
     category = db_session.query(PlantCategory).filter_by(name=category_name).one()
     plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
@@ -197,7 +225,7 @@ def showCategory(category_name):
 
 @app.route('/catalog/<category_name>/<plant_name>/')
 def showPlantItem(category_name, plant_name):
-    ''' This page shows all the details for the given plant item '''
+    """ This page shows all the details for the given plant item """
     #return "Show all details for plant %s" % plant_name
     category = db_session.query(PlantCategory).filter_by(name=category_name).one()
     plant = db_session.query(PlantItem).filter_by(name=plant_name, category_id=category.id).first()
@@ -209,24 +237,47 @@ def showPlantItem(category_name, plant_name):
 
 @app.route('/catalog/newplant/')
 def newPlant():
-    ''' This page is for creating a new plant item '''
+    """ This page is for creating a new plant item """
+    # Check for logged in user
+    if 'username' not in login_session:
+        return redirect('/login')
     # return "Create a new plant"
     categories = db_session.query(PlantCategory).all()
     return render_template('newplant.html', categories=categories)
 
+
 @app.route('/catalog/<plant_name>/edit/')
 def editPlant(plant_name):
-    ''' This page is for editing the given plant item '''
-    # return "Edit plant %s" % plant_name
+    """ This page is for editing the given plant item """
+    # Check for logged in user
+    if 'username' not in login_session:
+        return redirect('/login')
+    # Retrieve plant information
     categories = db_session.query(PlantCategory).all()
     plant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    # check for ownership
+    if login_session['user_id'] != plant.user_id:
+        flash("Edit permission denied: User is not owner of %s" % plant_name)
+        return redirect(url_for('showPlantItem',
+            category_name=plant.category.name,
+            plant_name=plant_name))
     return render_template('editplant.html', categories=categories, plant=plant)
+
 
 @app.route('/catalog/<plant_name>/delete/')
 def deletePlant(plant_name):
-    ''' This page is for deleting the given plant item '''
-    # return "Delete plant %s" % plant_name
+    """ This page is for deleting the given plant item """
+    # Check for logged in user
+    if 'username' not in login_session:
+        return redirect('/login')
+    # Retrieve plant information
     plant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    # check for ownership
+    if login_session['user_id'] != plant.user_id:
+        flash("Delete permission denied: User is not owner of %s" % plant_name)
+        return redirect(url_for('showPlantItem',
+            category_name=plant.category.name,
+            plant_name=plant_name))
     return render_template('deleteplant.html', plant=plant)
 
 
