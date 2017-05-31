@@ -203,7 +203,35 @@ def disconnect():
         return response
 
 
-# Main catalog page handler
+# API Endpoint handlers
+# Show JSON for All plants
+@app.route('/catalog/JSON/')
+def allPlantsJSON():
+    """ This page returns a JSON API for all Plants in the catalog """
+    plants = db_session.query(PlantItem).all()
+    return jsonify(Plants = [i.serialize for i in plants])
+
+
+# Show JSON for a category of plants
+@app.route('/catalog/<category_name>/JSON/')
+def categoryJSON(category_name):
+    """ This page returns a JSON API for all plants in the given category """
+    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+    plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
+    return jsonify(Plants = [i.serialize for i in plants])
+
+
+# Show JSON for a particular plant item
+@app.route('/catalog/<category_name>/<plant_name>/JSON/')
+def plantJSON(category_name, plant_name):
+    """ This page returns a JSON API for a particular plant item """
+    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+    plant = db_session.query(PlantItem).filter_by(name=plant_name,
+        category_id=category.id).one()
+    return jsonify(Plant = plant.serialize)
+
+
+# Main catalog page handler - Shows All Categories & Recent Plants
 @app.route('/')
 @app.route('/catalog/')
 def showCategories():
