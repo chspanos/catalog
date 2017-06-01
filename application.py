@@ -14,6 +14,8 @@ import httplib2
 import json
 from flask import make_response
 import requests
+# Imports for checking input data
+import bleach
 
 # Database objects
 from database_setup import Base, PlantCategory, PlantItem, User
@@ -203,6 +205,22 @@ def disconnect():
         return response
 
 
+# Helper function for finding plant items
+def getPlant(category_name, plant_name):
+    """ Given a plant name and its category, this helper function
+    returns the plant object if it already exists in the database or
+    None if it does not
+    """
+    try:
+        category = db_session.query(PlantCategory).filter_by(
+            name=category_name).one()
+        plant = db_session.query(PlantItem).filter_by(name=plant_name,
+            category_id=category.id).one()
+        return plant
+    except:
+        return None
+
+
 # API Endpoint handlers
 # Show JSON for All plants
 @app.route('/catalog/JSON/')
@@ -225,9 +243,7 @@ def categoryJSON(category_name):
 @app.route('/catalog/<category_name>/<plant_name>/JSON/')
 def plantJSON(category_name, plant_name):
     """ This page returns a JSON API for a particular plant item """
-    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-    plant = db_session.query(PlantItem).filter_by(name=plant_name,
-        category_id=category.id).one()
+    plant = getPlant(category_name, plant_name)
     return jsonify(Plant = plant.serialize)
 
 
@@ -247,9 +263,13 @@ def showCategories():
 @app.route('/catalog/<category_name>/')
 def showCategory(category_name):
     """ This page shows all the plant items for the given category """
-    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-    plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
-    return render_template('category.html', category=category, plants=plants)
+    try:
+        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
+        return render_template('category.html', category=category, plants=plants)
+    except:
+        flash("Category: %s is not in catalog" % category_name)
+        return redirect(url_for('showCategories'))
 
 
 # Show a single plant item page handler
@@ -257,8 +277,7 @@ def showCategory(category_name):
 def showPlantItem(category_name, plant_name):
     """ This page shows all the details for the given plant item """
     try:
-        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-        plant = db_session.query(PlantItem).filter_by(name=plant_name, category_id=category.id).first()
+        plant = getPlant(category_name, plant_name)
         creator = db_session.query(User).filter_by(id=plant.user_id).one()
         return render_template('plant.html', plant=plant, creator=creator)
     except:
@@ -275,16 +294,26 @@ def newPlant():
         return redirect('/login')
     # Process request
     if request.method == 'POST':
-        # Get data from input form
-        name = request.form['name']
-        botanical_name = request.form['botanical_name']
-        image = request.form['image']
-        description = request.form['description']
+        # Check for required data
+        # Note: A category is assigned by default in the form, if not chosen
+        if not request.form['name']:
+            flash("Create new plant failed! You must enter a plant name.")
+            return redirect(url_for('showCategories'))
+        # Check if we already have an entry by that plant_name and category
+        plant_name = bleach.clean(request.form['name'])
         category_name = request.form['category']
-        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        if getPlant(category_name, plant_name):
+            flash("Create new plant failed! Plant item %s already exists" % plant_name)
+            return redirect(url_for('showCategories'))
+        # We have unique plant name and category, so add it to database
+        botanical_name = bleach.clean(request.form['botanical_name'])
+        image = bleach.clean(request.form['image'])
+        description = bleach.clean(request.form['description'])
+        category = db_session.query(PlantCategory).filter_by(
+            name=category_name).one()
         user_id = login_session['user_id']
         # create new Plant database entry
-        newPlantItem = PlantItem(name=name, botanical_name=botanical_name,
+        newPlantItem = PlantItem(name=plant_name, botanical_name=botanical_name,
             image=image, description=description, category_id=category.id,
             user_id = user_id)
         db_session.add(newPlantItem)
@@ -319,13 +348,13 @@ def editPlant(plant_name):
     if request.method == 'POST':
         # Get data from input form
         if request.form['name']:
-            editedPlant.name = request.form['name']
+            editedPlant.name = bleach.clean(request.form['name'])
         if request.form['botanical_name']:
-            editedPlant.botanical_name = request.form['botanical_name']
+            editedPlant.botanical_name = bleach.clean(request.form['botanical_name'])
         if request.form['image']:
-            editedPlant.image = request.form['image']
+            editedPlant.image = bleach.clean(request.form['image'])
         if request.form['description']:
-            editedPlant.description = request.form['description']
+            editedPlant.description = bleach.clean(request.form['description'])
         if request.form['category']:
             category_name = request.form['category']
             category = db_session.query(PlantCategory).filter_by(name=category_name).one()

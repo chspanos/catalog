@@ -30,7 +30,7 @@
 					{% for category in categories %}
 						<div class="radio">
 						  <label>
-						    <input type="radio" name="category" id="cat{{category.id}}" value="{{category.name}}">
+						    <input type="radio" name="category" id="cat{{category.id}}" value="{{category.name}}" {% if category.id == 1 %}checked{% endif %}>
 								{{category.name}}
 						  </label>
 						</div>

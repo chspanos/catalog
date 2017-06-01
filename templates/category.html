@@ -20,7 +20,7 @@
 						<a href = "{{url_for('showPlantItem', category_name=plant.category.name, plant_name=plant.name)}}">
 							<h4 class="plant-name"> {{plant.name}} </h4>
 						</a>
-						<figure>
+						<figure class="plant-image">
 							<img src="{{plant.image}}" alt="{{plant.name}}">
 						</figure>
 						<p><strong>Category: </strong>{{ plant.category.name}}</p>
