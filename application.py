@@ -205,8 +205,8 @@ def disconnect():
         return response
 
 
-# Helper function for finding plant items
-def getPlant(category_name, plant_name):
+# Helper functions for finding plant items
+def getCategoryPlant(category_name, plant_name):
     """ Given a plant name and its category, this helper function
     returns the plant object if it already exists in the database or
     None if it does not
@@ -219,6 +219,23 @@ def getPlant(category_name, plant_name):
         return plant
     except:
         return None
+
+def getPlantByName(plant_name):
+    """ Given a plant name, this helper function returns the plant object
+    if found in the database or None if not
+    """
+    try:
+        plant = db_session.query(PlantItem).filter_by(name=plant_name).one()
+        return plant
+    except:
+        return None
+
+def nameConflict(old_plant, new_name):
+    """ Checks proposed new plant name for existance in database.
+    Returns True if there is a collision and False otherwise
+    """
+    db_plant = getPlantByName(new_name)
+    return db_plant and db_plant.id != old_plant.id
 
 
 # API Endpoint handlers
@@ -248,9 +265,7 @@ def categoryJSON(category_name):
 def plantJSON(category_name, plant_name):
     """ This page returns a JSON API for a particular plant item """
     try:
-        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-        plant = db_session.query(PlantItem).filter_by(name=plant_name,
-            category_id=category.id).one()
+        plant = getCategoryPlant(category_name, plant_name)
         return jsonify(Plant = plant.serialize)
     except:
         flash("Category: %s, Plant: %s is not in catalog" % (category_name, plant_name))
@@ -287,7 +302,7 @@ def showCategory(category_name):
 def showPlantItem(category_name, plant_name):
     """ This page shows all the details for the given plant item """
     try:
-        plant = getPlant(category_name, plant_name)
+        plant = getCategoryPlant(category_name, plant_name)
         creator = db_session.query(User).filter_by(id=plant.user_id).one()
         return render_template('plant.html', plant=plant, creator=creator)
     except:
@@ -312,7 +327,7 @@ def newPlant():
         # Check if we already have an entry by that plant_name and category
         plant_name = bleach.clean(request.form['name'])
         category_name = request.form['category']
-        if getPlant(category_name, plant_name):
+        if getPlantByName(plant_name):
             flash("Create new plant failed! Plant item %s already exists" % plant_name)
             return redirect(url_for('showCategories'))
         # We have unique plant name and category, so add it to database
@@ -362,7 +377,16 @@ def editPlant(plant_name):
     if request.method == 'POST':
         # Get data from input form
         if request.form['name']:
-            editedPlant.name = bleach.clean(request.form['name'])
+            new_name = bleach.clean(request.form['name'])
+            # Check new name for collisions in database
+            if nameConflict(editedPlant, new_name):
+                # Abort edit
+                flash("Edit permission denied: Plant item %s already exists" % new_name)
+                return redirect(url_for('showPlantItem',
+                    category_name=editedPlant.category.name,
+                    plant_name=plant_name))
+            else:
+                editedPlant.name = new_name
         if request.form['botanical_name']:
             editedPlant.botanical_name = bleach.clean(request.form['botanical_name'])
         if request.form['image']:
