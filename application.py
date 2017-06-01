@@ -234,17 +234,27 @@ def allPlantsJSON():
 @app.route('/catalog/<category_name>/JSON/')
 def categoryJSON(category_name):
     """ This page returns a JSON API for all plants in the given category """
-    category = db_session.query(PlantCategory).filter_by(name=category_name).one()
-    plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
-    return jsonify(Plants = [i.serialize for i in plants])
+    try:
+        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        plants = db_session.query(PlantItem).filter_by(category_id=category.id).all()
+        return jsonify(Plants = [i.serialize for i in plants])
+    except:
+        flash("Category: %s is not in catalog" % category_name)
+        return redirect(url_for('showCategories'))
 
 
 # Show JSON for a particular plant item
 @app.route('/catalog/<category_name>/<plant_name>/JSON/')
 def plantJSON(category_name, plant_name):
     """ This page returns a JSON API for a particular plant item """
-    plant = getPlant(category_name, plant_name)
-    return jsonify(Plant = plant.serialize)
+    try:
+        category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+        plant = db_session.query(PlantItem).filter_by(name=plant_name,
+            category_id=category.id).one()
+        return jsonify(Plant = plant.serialize)
+    except:
+        flash("Category: %s, Plant: %s is not in catalog" % (category_name, plant_name))
+        return redirect(url_for('showCategories'))
 
 
 # Main catalog page handler - Shows All Categories & Recent Plants
@@ -336,13 +346,17 @@ def editPlant(plant_name):
     if 'username' not in login_session:
         return redirect('/login')
     # Retrieve plant information
-    categories = db_session.query(PlantCategory).all()
-    editedPlant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    try:
+        editedPlant = db_session.query(PlantItem).filter_by(
+            name=plant_name).one()
+    except:
+        flash("Edit failed! Plant: %s is not in catalog" % plant_name)
+        return redirect(url_for('showCategories'))
     # check for ownership
     if login_session['user_id'] != editedPlant.user_id:
         flash("Edit permission denied: User is not owner of %s" % plant_name)
         return redirect(url_for('showPlantItem',
-            category_name=plant.category.name,
+            category_name=editedPlant.category.name,
             plant_name=plant_name))
     # Process request
     if request.method == 'POST':
@@ -357,7 +371,8 @@ def editPlant(plant_name):
             editedPlant.description = bleach.clean(request.form['description'])
         if request.form['category']:
             category_name = request.form['category']
-            category = db_session.query(PlantCategory).filter_by(name=category_name).one()
+            category = db_session.query(PlantCategory).filter_by(
+                name=category_name).one()
             editedPlant.category_id = category.id
         # update Plant database entry
         db_session.add(editedPlant)
@@ -367,6 +382,7 @@ def editPlant(plant_name):
         return redirect(url_for('showPlantItem', category_name=category_name,
             plant_name=editedPlant.name))
     else:
+        categories = db_session.query(PlantCategory).all()
         return render_template('editplant.html', categories=categories,
             plant=editedPlant)
 
@@ -379,12 +395,16 @@ def deletePlant(plant_name):
     if 'username' not in login_session:
         return redirect('/login')
     # Retrieve plant information
-    delPlant = db_session.query(PlantItem).filter_by(name=plant_name).first()
+    try:
+        delPlant = db_session.query(PlantItem).filter_by(name=plant_name).one()
+    except:
+        flash("Delete failed! Plant: %s is not in catalog" % plant_name)
+        return redirect(url_for('showCategories'))
     # check for ownership
     if login_session['user_id'] != delPlant.user_id:
         flash("Delete permission denied: User is not owner of %s" % plant_name)
         return redirect(url_for('showPlantItem',
-            category_name=plant.category.name,
+            category_name=delPlant.category.name,
             plant_name=plant_name))
     # Process request
     if request.method == 'POST':
