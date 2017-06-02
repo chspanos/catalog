@@ -11,7 +11,7 @@ This project is built within a virtual machine implemented with VirtualBox and V
 This application has the following features:
 
 * The `/catalog` or `/` page is the home page for this application and displays a list of all the plant categories and the most recent plant items added to the catalog.
-* The `/catalog/<category>` pages displays all the plant items belonging to the specified category.
+* The `/catalog/<category>` pages display all the plant items belonging to the specified category.
 * The `/catalog/<category>/<plant>` pages display the details of a particular plant entry.
 * Authenticated users have the ability to create new plant items, as well as edit and delete the items that they have created. Forms are provided for each of these functions.
 * Only authenticated users can add or update items in the database. They are prohibited from updating plant items that they do not own.
@@ -25,10 +25,10 @@ Within this repository, you will find the following files that comprise this app
 * `database_setup.py` - This file contains the `Users`, `PlantCategory`, and `PlantItem` database tables needed for this application. Run this Python code to set up the database.
 * `lotsofplants.py` - This file contains Python code that populates the database with all the plant categories and a bunch of sample plant items.
 * `application.py` - This is the main Python code that runs the Flask web application for the catalog.
-* `client_secrets.json` - This JSON file contains the client ID and secret data needed by Google APIs to handle 3rd party Google Authentication.
 * `templates/*.html` - This subdirectory contains all the HTML templates for the web pages in this application.
 * `static/images/` - This subdirectory contains all the sample plant images, banners, and other image assets needed to render the preliminary pages.
 * `static/styles.css` - The CSS styles for formatting the web pages.
+* `client_secrets.json` - This JSON file contains the client ID and secret data needed by Google APIs to handle 3rd party Google Authentication. You will need to provide your own version of this file to run the application.
 
 ### How to run the Plant Catalog
 
