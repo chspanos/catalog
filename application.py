@@ -1,3 +1,17 @@
+""" The main Python code for running the plant catalog website
+
+Dependencies:
+    "database_setup.py" - which defines the User, PlantCategory, and
+        Plant Item tables and sets up the database
+    "lotsofplants.py" - which loads the PlantCategory table and adds
+        sample plant items
+    "templates/*.html" - all the HTML templates for the various web pages
+    "static/images" - all the image assets, including banner image and
+        plant images for the sample plant items
+    "static/styles.css" - style file for the HTML templates
+    "client_secrets.json" - Google API client ID and secrets needed for
+        3rd-party login authentication
+"""
 # Imports for running flask and rendering pages
 from flask import Flask, render_template, url_for, request, redirect, jsonify, flash
 # Imports for SQLalchemy
@@ -35,6 +49,7 @@ Base.metadata.bind = engine
 # Create a session to interface with the database
 DBSession = sessionmaker(bind=engine)
 db_session = DBSession()
+
 
 # Helper functions for creating and handling new Users
 def createUser(login_session):
@@ -153,7 +168,7 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    # If user is not alreaady in our database, create a new user
+    # If user is not already in our database, create a new user
     user_id = getUserID(login_session['email'])
     if not user_id:
         user_id = createUser(login_session)
@@ -320,20 +335,20 @@ def newPlant():
     # Process request
     if request.method == 'POST':
         # Check for required data
-        # Note: A category is assigned by default in the form, if not chosen
         if not request.form['name']:
             flash("Create new plant failed! You must enter a plant name.")
             return redirect(url_for('showCategories'))
-        # Check if we already have an entry by that plant_name and category
+        # Check if we already have an entry by that plant_name
         plant_name = bleach.clean(request.form['name'])
-        category_name = request.form['category']
         if getPlantByName(plant_name):
             flash("Create new plant failed! Plant item %s already exists" % plant_name)
             return redirect(url_for('showCategories'))
-        # We have unique plant name and category, so add it to database
+        # We have unique plant name, so add new plant to database
         botanical_name = bleach.clean(request.form['botanical_name'])
         image = bleach.clean(request.form['image'])
         description = bleach.clean(request.form['description'])
+        # NOTE: A category is assigned by default in the form, if not chosen
+        category_name = request.form['category']
         category = db_session.query(PlantCategory).filter_by(
             name=category_name).one()
         user_id = login_session['user_id']
@@ -378,9 +393,8 @@ def editPlant(plant_name):
         # Get data from input form
         if request.form['name']:
             new_name = bleach.clean(request.form['name'])
-            # Check new name for collisions in database
+            # Check new name for collisions in database, abort on collision
             if nameConflict(editedPlant, new_name):
-                # Abort edit
                 flash("Edit permission denied: Plant item %s already exists" % new_name)
                 return redirect(url_for('showPlantItem',
                     category_name=editedPlant.category.name,

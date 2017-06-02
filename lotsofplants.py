@@ -1,3 +1,9 @@
+""" Python code to load PlantCatagory table as well as adding
+some preliminary Plant items to the plant catalog.
+
+Dependencies: "database_setup.py"
+You must run "database_setup.py" first to define the database tables
+"""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -29,6 +35,7 @@ User1 = User(name="Flora Bunda", email="florasflowers@gmail.com",
              picture="/static/images/blank_user.gif")
 session.add(User1)
 session.commit()
+
 
 # Category data
 plantGroups = {
@@ -161,12 +168,12 @@ plants = {
       "name": "Star Jasmine",
       "botanical_name": "Trachelospermum jasminoides",
       "description": "Twining vine with glossy green leaves and scented white flowers",
-      "picture": "/static/images/nandina.JPG",
+      "picture": "/static/images/star-jasmine.JPG",
       "category": "Vines"
     },{
       "name": "Tomato 'Brandywine'",
       "botanical_name": "Tomato",
-      "description": "Rich-flavored pink hierloom tomato",
+      "description": "Rich-flavored pink heirloom tomato",
       "picture": "/static/images/tomato.JPG",
       "category": "Vegetables"
     },{
