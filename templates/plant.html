@@ -1,14 +1,15 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-	<div class="row divider green">
+	<div class="row divider blue">
 		<div class="col-md-12"></div>
 	</div>
-	<div class="row banner menu">
-		<div class="col-md-7 col-md-offset-1 padding-none">
+	<div class="row banner">
+		<div class="col-md-1"></div>
+		<div class="col-md-6 padding-none">
 			<h1>{{ plant.name }}</h1>
 		</div>
-		<div class="col-md-3 text-right">
+		<div class="col-md-4 text-right">
 			<figure class="creator">
 				<img src="{{ creator.picture }}">
 				<figcaption>{{ creator.name }}</figcaption>
