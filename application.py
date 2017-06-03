@@ -28,6 +28,8 @@ import httplib2
 import json
 from flask import make_response
 import requests
+# Imports for creating login decorator
+from functools import wraps
 # Imports for checking input data
 import bleach
 
@@ -220,6 +222,17 @@ def disconnect():
         return response
 
 
+# Decorator function for checking login status
+def login_required(my_function):
+    @wraps(my_function)
+    def decorated_function(*args, **kws):
+        if 'username' not in login_session:
+            return redirect('/login')
+        else:
+            return my_function(*args, **kws)
+    return decorated_function
+
+
 # Helper functions for finding plant items
 def getCategoryPlant(category_name, plant_name):
     """ Given a plant name and its category, this helper function
@@ -263,7 +276,7 @@ def allPlantsJSON():
 
 
 # Show JSON for a category of plants
-@app.route('/catalog/<category_name>/JSON/')
+@app.route('/catalog/<path:category_name>/JSON/')
 def categoryJSON(category_name):
     """ This page returns a JSON API for all plants in the given category """
     try:
@@ -276,7 +289,7 @@ def categoryJSON(category_name):
 
 
 # Show JSON for a particular plant item
-@app.route('/catalog/<category_name>/<plant_name>/JSON/')
+@app.route('/catalog/<path:category_name>/<path:plant_name>/JSON/')
 def plantJSON(category_name, plant_name):
     """ This page returns a JSON API for a particular plant item """
     try:
@@ -300,7 +313,7 @@ def showCategories():
 
 
 # Show Category page handler
-@app.route('/catalog/<category_name>/')
+@app.route('/catalog/<path:category_name>/')
 def showCategory(category_name):
     """ This page shows all the plant items for the given category """
     try:
@@ -313,7 +326,7 @@ def showCategory(category_name):
 
 
 # Show a single plant item page handler
-@app.route('/catalog/<category_name>/<plant_name>/')
+@app.route('/catalog/<path:category_name>/<path:plant_name>/')
 def showPlantItem(category_name, plant_name):
     """ This page shows all the details for the given plant item """
     try:
@@ -327,11 +340,9 @@ def showPlantItem(category_name, plant_name):
 
 # Page handler for creating a new plant item
 @app.route('/catalog/newplant/', methods=['GET', 'POST'])
+@login_required
 def newPlant():
     """ This page is for creating a new plant item """
-    # Check for logged in user
-    if 'username' not in login_session:
-        return redirect('/login')
     # Process request
     if request.method == 'POST':
         # Check for required data
@@ -369,12 +380,10 @@ def newPlant():
 
 
 # Edit a plant item page handler
-@app.route('/catalog/<plant_name>/edit/', methods=['GET', 'POST'])
+@app.route('/catalog/<path:plant_name>/edit/', methods=['GET', 'POST'])
+@login_required
 def editPlant(plant_name):
     """ This page is for editing the given plant item """
-    # Check for logged in user
-    if 'username' not in login_session:
-        return redirect('/login')
     # Retrieve plant information
     try:
         editedPlant = db_session.query(PlantItem).filter_by(
@@ -426,12 +435,10 @@ def editPlant(plant_name):
 
 
 # Delete a plant item page handler
-@app.route('/catalog/<plant_name>/delete/', methods=['GET', 'POST'])
+@app.route('/catalog/<path:plant_name>/delete/', methods=['GET', 'POST'])
+@login_required
 def deletePlant(plant_name):
     """ This page is for deleting the given plant item """
-    # Check for logged in user
-    if 'username' not in login_session:
-        return redirect('/login')
     # Retrieve plant information
     try:
         delPlant = db_session.query(PlantItem).filter_by(name=plant_name).one()
